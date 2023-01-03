@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post
+from .models import Post, Comment
 
 
 # Register your models here.
@@ -14,3 +14,11 @@ class PostAdmin(admin.ModelAdmin):
     raw_id_fields = ['author']  # for display a foreignKey in admin panel in new style instead of dropdown select input
     date_hierarchy = 'publish'  # for show data history created
     ordering = ['status', 'publish']  # ordering this is just in admin panel
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    """ register comment model in admin panel """
+    list_display = ['name', 'email', 'post', 'created', 'active']
+    list_filter = ['active', 'created', 'updated']
+    search_fields = ['name', 'email', 'body']
