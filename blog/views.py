@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -28,7 +29,7 @@ def post_list(request, tag_slug=None):
     except PageNotAnInteger:
         # If page_number is not an integer deliver the first page
         posts = paginator.page(1)
-    return render(request, "blog/post/list.html", {"posts": posts,"tag":tag})
+    return render(request, "blog/post/list.html", {"posts": posts, "tag": tag})
 
 
 def post_detail(request, post, year, month, day):
@@ -37,7 +38,15 @@ def post_detail(request, post, year, month, day):
                              publish__month=month, publish__day=day)
     comments = post.comments.filter(active=True)
     form = CommentForm()
-    return render(request, "blog/post/detail.html", {"post": post, "comments": comments, "form": form})
+
+    # list similar post
+    post_tags_ids = post.tags.values_list("id", flat=True)  # list of id tags for this post
+    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)  # filter post by list of id
+    similar_posts = similar_posts.annotate(same_tags=Count("tags")).order_by('-same_tags', '-publish')[
+                    :4]  # annotate by tags and ordered
+
+    return render(request, "blog/post/detail.html",
+                  {"post": post, "comments": comments, "form": form, 'similar_posts': similar_posts})
 
 
 def post_share(request, post_id):
